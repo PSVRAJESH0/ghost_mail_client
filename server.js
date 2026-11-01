@@ -11,7 +11,7 @@ require('dotenv').config();
 const HTTP_PORT = parseInt(process.env.PORT || '3000', 10);
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '2525', 10);
 const DEFAULT_DOMAIN = (process.env.DOMAIN || 'tempmail.mycustomdomain.com').toLowerCase().trim();
-const DATA_FILE = path.join(__dirname, 'data', 'store.json');
+const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'store.json');
 
 // Application State
 let config = {
@@ -49,6 +49,10 @@ try {
 
 function saveStore() {
   try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     const data = {
       config,
       inboxes: Array.from(inboxes.values()),
@@ -268,6 +272,11 @@ function escapeHtml(str) {
 }
 
 // API Routes
+
+// Health Check for Container & Orchestrator Probes
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: Date.now() });
+});
 
 // 1. Get system config
 app.get('/api/config', (req, res) => {
@@ -581,3 +590,22 @@ smtp.listen(SMTP_PORT, '0.0.0.0', () => {
     console.error('[SMTP Error]', err.message);
   }
 });
+
+// Graceful Shutdown Handler
+function handleGracefulShutdown(signal) {
+  console.log(`\n[Server] Received ${signal}. Flushing store and shutting down gracefully...`);
+  saveStore();
+  wss.close(() => {
+    server.close(() => {
+      smtp.close(() => {
+        console.log('[Server] All services stopped cleanly.');
+        process.exit(0);
+      });
+    });
+  });
+  // Fallback to force exit if closing takes longer than 5 seconds
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+
+process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));

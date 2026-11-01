@@ -1,0 +1,39 @@
+# Template for GitHub Actions CI (.github/workflows/ci.yml)
+# Note: To enable on GitHub, copy this file into .github/workflows/ci.yml in your repo.
+name: GhostMail CI & Pipeline Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start GhostMail Server in Background
+        run: |
+          node server.js &
+          sleep 3
+
+      - name: Execute Full End-to-End Test Suite
+        env:
+          PORT: 3000
+          SMTP_PORT: 2525
+          TUNNEL_URL: ""
+        run: npm test

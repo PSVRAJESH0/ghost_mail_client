@@ -1,0 +1,9 @@
+node_modules/
+npm-debug.log
+.git/
+.gitignore
+.env
+bin/
+data/store.json
+.DS_Store
+*.log

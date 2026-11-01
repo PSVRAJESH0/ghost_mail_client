@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  ghostmail:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ghostmail
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "2525:2525"
+    environment:
+      - PORT=3000
+      - SMTP_PORT=2525
+      - DOMAIN=${DOMAIN:-psvrajesh.in}
+      - DATA_FILE=/app/data/store.json
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional: Run persistent Cloudflare Tunnel alongside GhostMail (no ports forwarded)
+  # Uncomment and add your tunnel token from Cloudflare Zero Trust Dashboard:
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   container_name: ghostmail_tunnel
+  #   restart: unless-stopped
+  #   command: tunnel --no-autoupdate run
+  #   environment:
+  #     - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+  #   depends_on:
+  #     - ghostmail

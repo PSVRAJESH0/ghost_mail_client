@@ -1,0 +1,27 @@
+[Unit]
+Description=GhostMail Disposable Email & OTP Client
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/ghost_mail_client
+EnvironmentFile=-/opt/ghost_mail_client/.env
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5s
+
+# Security Hardening
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+# Standard Logging to journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ghostmail
+
+[Install]
+WantedBy=multi-user.target

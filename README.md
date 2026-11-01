@@ -68,12 +68,49 @@ See detailed instructions in [`cloudflare/README.md`](./cloudflare/README.md).
 
 ---
 
+## Testing & Quality Assurance
+
+Run the comprehensive 17-point end-to-end integration and pipeline test suite:
+```bash
+npm test
+```
+The test suite verifies:
+- Web & Container health (`/healthz` and `/api/config`)
+- Live WebSocket handshake & push broadcasts (`/ws`)
+- Inbox lifecycle: creation, listing, and TTL extension
+- Inbound MIME RFC822 webhook ingestion & OTP parser
+- Developer OTP simulator engine (`POST /api/simulate`)
+- Direct inbound SMTP server socket & raw transaction delivery (Port 2525)
+- Inbox scrap and message deletion lifecycle
+- Public Cloudflare edge tunnel reachability & webhook routing
+- Cloudflare Email Worker forwarder endpoint
+
+---
+
+## Production Deployment
+
+GhostMail is production-ready across multiple hosting environments:
+- **Docker Compose**: `docker compose up -d`
+- **Render.com / Railway / Fly.io**: 1-click PaaS blueprints included ([`render.yaml`](./render.yaml), [`Procfile`](./Procfile), [`Dockerfile`](./Dockerfile))
+- **Dedicated VPS**: Production systemd service unit included ([`systemd/ghostmail.service`](./systemd/ghostmail.service))
+- **Cloudflare Zero Trust**: Named persistent tunnels with zero open ports
+
+👉 **Read the complete guide in [`DEPLOYMENT.md`](./DEPLOYMENT.md)**.
+
+---
+
 ## Project Structure
 
 ```
 ├── server.js              # Express API, WebSockets, SMTP listener, OTP parser
+├── test.js                # 17-point end-to-end integration test suite
+├── Dockerfile             # Production Alpine container definition
+├── docker-compose.yml     # 1-click persistent local & VPS container stack
+├── render.yaml            # Render blueprint with persistent disk
+├── Procfile               # PaaS process file
+├── DEPLOYMENT.md          # Full production deployment guide
 ├── package.json           # Dependencies (express, smtp-server, mailparser, ws)
-├── .env                   # Port and domain settings
+├── .env.example           # Production environment variable template
 ├── public/
 │   ├── index.html         # Modern web interface
 │   ├── style.css          # Glassmorphic dark styling & animations
@@ -81,6 +118,9 @@ See detailed instructions in [`cloudflare/README.md`](./cloudflare/README.md).
 ├── cloudflare/
 │   ├── worker.js          # Cloudflare Email Routing worker
 │   └── README.md          # Domain DNS & routing setup guide
+├── systemd/
+│   └── ghostmail.service  # Production Linux systemd unit
 └── data/
     └── store.json         # Auto-saved inboxes and messages
 ```
+
