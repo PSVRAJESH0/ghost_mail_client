@@ -1,5 +1,5 @@
 {
-  "name": "disposable-temp-mail",
+  "name": "ghost_mail_client",
   "version": "1.0.0",
   "description": "Disposable Temporary Email & OTP Client",
   "main": "server.js",
