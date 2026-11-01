@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GhostMail — Instant Disposable Email & OTP Client</title>
+  <meta name="description" content="Generate instant, disposable emails under your custom domain to securely receive verification codes, OTPs, and temporary messages. Scrap anytime.">
+  
+  <!-- Modern Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="brand">
+          <div class="brand-icon-wrapper">
+            <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span class="pulse-indicator"></span>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-name">Ghost<span>Mail</span></h1>
+            <span class="brand-tagline">Disposable Domain Inboxes</span>
+          </div>
+        </div>
+
+        <div class="status-chip" id="connectionStatusChip" title="Real-time WebSocket Connection">
+          <span class="status-dot"></span>
+          <span class="status-label" id="connectionStatusText">Live Feed Connected</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Domain config button -->
+        <button class="btn btn-secondary" id="openDomainModalBtn" title="Configure custom domain">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span id="currentDomainBadge">tempmail.local</span>
+          <svg class="btn-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <!-- Sound toggle -->
+        <button class="btn-icon-only" id="soundToggleBtn" title="Toggle audio chime for incoming OTPs">
+          <svg id="soundOnIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+          <svg id="soundOffIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
+            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+
+        <!-- Instant Test Simulator -->
+        <div class="dropdown-wrapper">
+          <button class="btn btn-primary" id="simulateDropdownBtn" title="Simulate incoming OTP email for testing">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span>Simulate OTP</span>
+            <svg class="btn-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu hidden" id="simulateDropdownMenu">
+            <div class="dropdown-header">Mock Service OTP</div>
+            <button class="dropdown-item" data-sender="google">
+              <span class="service-dot google"></span> Google Account Verification
+            </button>
+            <button class="dropdown-item" data-sender="github">
+              <span class="service-dot github"></span> GitHub Device Auth Code
+            </button>
+            <button class="dropdown-item" data-sender="discord">
+              <span class="service-dot discord"></span> Discord 2FA Security Code
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-layout">
+      <!-- Left Panel: Mailbox Manager -->
+      <aside class="sidebar-panel">
+        
+        <!-- Active Primary Address Card -->
+        <div class="card hero-address-card">
+          <div class="card-header-clean">
+            <span class="badge-label">Active Temporary Address</span>
+            <div class="countdown-badge" id="countdownContainer">
+              <svg class="timer-ring" width="22" height="22" viewBox="0 0 24 24">
+                <circle class="ring-bg" cx="12" cy="12" r="10" stroke-width="2.5" fill="none"/>
+                <circle class="ring-progress" id="timerProgressRing" cx="12" cy="12" r="10" stroke-width="2.5" fill="none" stroke-dasharray="62.8" stroke-dashoffset="0"/>
+              </svg>
+              <span class="timer-text" id="countdownTimer">30:00</span>
+            </div>
+          </div>
+
+          <div class="email-display-box" id="emailAddressBox" title="Click to copy address">
+            <div class="email-text" id="currentEmailDisplay">generating@domain.com</div>
+            <button class="btn-copy-address" id="copyAddressBtn" title="Copy email address">
+              <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span class="copy-tooltip" id="copyTooltip">Copy</span>
+            </button>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="hero-actions-grid">
+            <button class="btn btn-glass" id="extendTimeBtn" title="Add 15 minutes to mailbox lifespan">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>+15 Min</span>
+            </button>
+            <button class="btn btn-glass btn-danger-glass" id="scrapInboxBtn" title="Immediately destroy mailbox and delete all received emails">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              <span>Scrap Now</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Create New Temporary Inbox Card -->
+        <div class="card create-inbox-card">
+          <div class="card-title-row">
+            <span class="section-title">Create New Temporary Address</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Custom Alias (or leave blank for random)</label>
+            <div class="input-with-suffix">
+              <input type="text" id="customAliasInput" placeholder="e.g. otp-verify, stripe-test" spellcheck="false" autocomplete="off">
+              <span class="input-suffix" id="domainSuffixText">@domain.com</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Auto-Scrap Lifespan</label>
+            <div class="expiry-chips" id="ttlChipGroup">
+              <button type="button" class="chip" data-ttl="10">10 min</button>
+              <button type="button" class="chip active" data-ttl="30">30 min</button>
+              <button type="button" class="chip" data-ttl="60">1 hour</button>
+              <button type="button" class="chip" data-ttl="1440">24 hrs</button>
+              <button type="button" class="chip" data-ttl="0">Never</button>
+            </div>
+          </div>
+
+          <button class="btn btn-accent btn-full" id="createNewInboxBtn">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>Create New Inbox</span>
+          </button>
+        </div>
+
+        <!-- Active Inboxes List (Multi-inbox support) -->
+        <div class="card inboxes-list-card">
+          <div class="card-title-row">
+            <span class="section-title">Active Inboxes (<span id="inboxCountBadge">0</span>)</span>
+          </div>
+          <div class="inboxes-scroll-list" id="activeInboxesList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Right Panel: Unified Messages & Viewer -->
+      <section class="content-panel">
+        <div class="card inbox-viewer-card">
+          
+          <!-- Inbox Controls Bar -->
+          <div class="inbox-controls-bar">
+            <div class="inbox-header-title">
+              <h2 id="currentInboxHeading">Current Inbox</h2>
+              <span class="message-counter" id="inboxMessageCounter">0 messages</span>
+            </div>
+
+            <div class="inbox-controls-right">
+              <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="messageSearchInput" placeholder="Filter emails or OTPs...">
+              </div>
+
+              <button class="btn btn-glass btn-sm" id="refreshInboxBtn" title="Refresh messages">
+                <svg class="btn-icon" id="refreshSpinIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Split Inbox Layout: Left Message List, Right Reader -->
+          <div class="inbox-split-grid">
+            
+            <!-- Message List Column -->
+            <div class="message-list-column">
+              <div class="message-list" id="messageListContainer">
+                <!-- Dynamically populated or empty state -->
+              </div>
+            </div>
+
+            <!-- Email Detail Reader Column -->
+            <div class="message-reader-column" id="messageReaderContainer">
+              <!-- Empty state default -->
+              <div class="reader-empty-state" id="readerEmptyState">
+                <div class="empty-icon-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </div>
+                <h3>No Email Selected</h3>
+                <p>Waiting for incoming emails or verification codes. Any OTP received will appear instantly on the left!</p>
+                <div class="waiting-pulse-pill">
+                  <span class="ping-dot"></span>
+                  Listening for inbound OTPs on <span class="highlight-address" id="readerListeningAddress">...</span>
+                </div>
+              </div>
+
+              <!-- Active Email Details View -->
+              <div class="reader-detail-view hidden" id="readerDetailView">
+                
+                <!-- OTP HERO BANNER (Shown prominently when OTP is detected) -->
+                <div class="otp-hero-banner" id="otpHeroBanner">
+                  <div class="otp-badge-top">
+                    <svg class="zap-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    <span>ONE-TIME VERIFICATION CODE</span>
+                  </div>
+                  <div class="otp-code-container">
+                    <div class="otp-large-digits" id="otpLargeDigits">123456</div>
+                    <button class="btn btn-otp-copy" id="copyOtpBtn" title="Copy code to clipboard">
+                      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                      </svg>
+                      <span id="copyOtpBtnText">Copy OTP</span>
+                    </button>
+                  </div>
+                  <div class="otp-hint-note">Click to copy code instantly. Autofill or paste into the website's verification box.</div>
+                </div>
+
+                <!-- Email Metadata Header -->
+                <div class="email-meta-card">
+                  <div class="meta-row meta-header-row">
+                    <h3 class="email-subject-title" id="readerSubject">Subject</h3>
+                    <div class="email-actions-group">
+                      <button class="btn-icon-sm" id="deleteCurrentMessageBtn" title="Delete this email">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="meta-row">
+                    <div class="sender-info">
+                      <div class="sender-avatar" id="readerSenderAvatar">G</div>
+                      <div class="sender-details">
+                        <span class="sender-name" id="readerSenderName">Google</span>
+                        <span class="sender-address" id="readerSenderAddress">no-reply@accounts.google.com</span>
+                      </div>
+                    </div>
+                    <div class="email-timestamp" id="readerTimestamp">Just now</div>
+                  </div>
+
+                  <div class="meta-row meta-to-row">
+                    <span class="meta-label">Delivered To:</span>
+                    <span class="meta-value" id="readerToAddress">inbox@domain.com</span>
+                  </div>
+                </div>
+
+                <!-- Viewer Tabs (HTML, Plain Text, Raw) -->
+                <div class="reader-tabs-bar">
+                  <div class="reader-tabs">
+                    <button class="tab-btn active" data-tab="html">Rendered HTML</button>
+                    <button class="tab-btn" data-tab="text">Text Only</button>
+                    <button class="tab-btn" data-tab="headers">Raw Details</button>
+                  </div>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-content-container">
+                  <!-- HTML View (Sandboxed iframe) -->
+                  <div class="tab-content active" id="tabContentHtml">
+                    <iframe id="emailHtmlIframe" sandbox="allow-same-origin" title="Email preview"></iframe>
+                  </div>
+
+                  <!-- Text View -->
+                  <div class="tab-content" id="tabContentText">
+                    <pre class="plain-text-preview" id="emailPlainTextPreview"></pre>
+                  </div>
+
+                  <!-- Headers / Details View -->
+                  <div class="tab-content" id="tabContentHeaders">
+                    <div class="raw-details-box" id="emailRawDetailsBox"></div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Custom Domain Configuration Modal -->
+  <div class="modal-backdrop hidden" id="domainModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <h3>Domain Settings</h3>
+        </div>
+        <button class="btn-close-modal" id="closeDomainModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Set your custom domain (e.g. <code>mail.yourdomain.com</code> or <code>yourdomain.com</code>). All temporary addresses created will use this domain.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="customDomainInput">Active Domain Name</label>
+          <input type="text" id="customDomainInput" class="modal-input" placeholder="e.g. tempmail.yourdomain.com" spellcheck="false">
+        </div>
+
+        <div class="integration-guide-box">
+          <div class="guide-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Routing Inbound Emails:
+          </div>
+          <ul>
+            <li><strong>Cloudflare Email Routing (Free):</strong> Set Catch-All rule to forward to the included Cloudflare Worker pointing to <code>/api/webhook/email</code>.</li>
+            <li><strong>Direct SMTP:</strong> Add MX record pointing to your server's IP address on port 25 or 2525.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-glass" id="cancelDomainModalBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveDomainModalBtn">Save & Apply Domain</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
