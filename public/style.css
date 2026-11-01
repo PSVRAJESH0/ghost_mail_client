@@ -99,6 +99,8 @@ body {
 
 /* Header */
 .app-header {
+  position: relative;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -339,20 +341,22 @@ body {
 /* Dropdown */
 .dropdown-wrapper {
   position: relative;
+  z-index: 60;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
-  width: 250px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
+  width: 260px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.1);
   padding: 8px;
-  z-index: 100;
-  backdrop-filter: blur(20px);
+  z-index: 1000;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .dropdown-header {
@@ -378,11 +382,12 @@ body {
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(99, 102, 241, 0.2);
+  color: #ffffff;
 }
 
 .service-dot {
@@ -401,6 +406,8 @@ body {
   grid-template-columns: 380px 1fr;
   gap: 20px;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 /* Card Common */

@@ -679,6 +679,7 @@ function setupEventListeners() {
     const item = e.target.closest('.dropdown-item');
     if (!item) return;
     const sender = item.dataset.sender;
+    elements.simulateDropdownMenu.classList.add('hidden');
     simulateOtp(sender);
   });
 
